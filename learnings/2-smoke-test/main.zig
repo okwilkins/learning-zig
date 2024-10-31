@@ -2,6 +2,34 @@ const std = @import("std");
 const net = std.net;
 const posix = std.posix;
 
+const Client = struct {
+    socket: posix.socket_t,
+    addr: std.net.Address,
+    timeout: posix.timeval,
+
+    fn handle(self: Client) !void {
+        defer posix.close(self.socket);
+        var buf: [1024]u8 = undefined;
+        std.debug.print("{} connected\n", .{self.addr});
+
+        try posix.setsockopt(self.socket, posix.SOL.SOCKET, posix.SO.RCVTIMEO, &std.mem.toBytes(self.timeout));
+        try posix.setsockopt(self.socket, posix.SOL.SOCKET, posix.SO.SNDTIMEO, &std.mem.toBytes(self.timeout));
+
+        const read = posix.read(self.socket, &buf) catch |err| {
+            std.debug.print("error reading: {}\n", .{err});
+            return;
+        };
+
+        if (read == 0) {
+            return;
+        }
+
+        write(self.socket, buf[0..read]) catch |err| {
+            std.debug.print("error writing: {}\n", .{err});
+        };
+    }
+};
+
 pub fn main() !void {
     const addr = try net.Address.parseIp("0.0.0.0", 1337);
     const socket_type = posix.SOCK.STREAM;
@@ -23,7 +51,9 @@ pub fn main() !void {
             continue;
         };
 
-        const thread = try std.Thread.spawn(.{}, run, .{ socket, client_address });
+        const timeout = posix.timeval{ .tv_sec = 2, .tv_usec = 500_000 };
+        const client = Client{ .socket = socket, .addr = client_address, .timeout = timeout };
+        const thread = try std.Thread.spawn(.{}, Client.handle, .{client});
         thread.detach();
     }
 }
@@ -37,27 +67,4 @@ fn write(socket: posix.socket_t, msg: []const u8) !void {
         }
         pos += written;
     }
-}
-
-fn run(socket: posix.socket_t, addr: std.net.Address) !void {
-    defer posix.close(socket);
-    var buf: [1024]u8 = undefined;
-    std.debug.print("{} connected\n", .{addr});
-
-    const timeout = posix.timeval{ .tv_sec = 2, .tv_usec = 500_000 };
-    try posix.setsockopt(socket, posix.SOL.SOCKET, posix.SO.RCVTIMEO, &std.mem.toBytes(timeout));
-    try posix.setsockopt(socket, posix.SOL.SOCKET, posix.SO.SNDTIMEO, &std.mem.toBytes(timeout));
-
-    const read = posix.read(socket, &buf) catch |err| {
-        std.debug.print("error reading: {}\n", .{err});
-        return;
-    };
-
-    if (read == 0) {
-        return;
-    }
-
-    write(socket, buf[0..read]) catch |err| {
-        std.debug.print("error writing: {}\n", .{err});
-    };
 }
