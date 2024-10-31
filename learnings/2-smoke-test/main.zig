@@ -7,13 +7,19 @@ const Client = struct {
     addr: std.net.Address,
     timeout: posix.timeval,
 
-    fn handle(self: Client) !void {
+    fn handle(self: Client) void {
         defer posix.close(self.socket);
         var buf: [1024]u8 = undefined;
         std.debug.print("{} connected\n", .{self.addr});
 
-        try posix.setsockopt(self.socket, posix.SOL.SOCKET, posix.SO.RCVTIMEO, &std.mem.toBytes(self.timeout));
-        try posix.setsockopt(self.socket, posix.SOL.SOCKET, posix.SO.SNDTIMEO, &std.mem.toBytes(self.timeout));
+        posix.setsockopt(self.socket, posix.SOL.SOCKET, posix.SO.RCVTIMEO, &std.mem.toBytes(self.timeout)) catch |err| {
+            std.debug.print("error setting recieve timeout option on socket: {}\n", .{err});
+            return;
+        };
+        posix.setsockopt(self.socket, posix.SOL.SOCKET, posix.SO.SNDTIMEO, &std.mem.toBytes(self.timeout)) catch |err| {
+            std.debug.print("error setting send timeout option on socket: {}\n", .{err});
+            return;
+        };
 
         const read = posix.read(self.socket, &buf) catch |err| {
             std.debug.print("error reading: {}\n", .{err});
@@ -42,6 +48,15 @@ pub fn main() !void {
     try posix.listen(listener, 128);
     std.debug.print("server starting...\n", .{});
 
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    // This is very resource intensive, it would be better to write own scheduler or event-loop
+    var pool: std.Thread.Pool = undefined;
+    defer pool.deinit();
+    try std.Thread.Pool.init(&pool, .{ .allocator = allocator, .n_jobs = 64 });
+
     while (true) {
         var client_address: net.Address = undefined;
         var client_address_len: posix.socklen_t = @sizeOf(net.Address);
@@ -53,8 +68,7 @@ pub fn main() !void {
 
         const timeout = posix.timeval{ .tv_sec = 2, .tv_usec = 500_000 };
         const client = Client{ .socket = socket, .addr = client_address, .timeout = timeout };
-        const thread = try std.Thread.spawn(.{}, Client.handle, .{client});
-        thread.detach();
+        try pool.spawn(Client.handle, .{client});
     }
 }
 
