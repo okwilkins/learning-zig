@@ -3,7 +3,7 @@ const net = std.net;
 const posix = std.posix;
 
 pub fn main() !void {
-    const addr = try net.Address.parseIp("127.0.0.1", 1337);
+    const addr = try net.Address.parseIp("0.0.0.0", 1337);
     const socket_type = posix.SOCK.STREAM;
     const protocol = posix.IPPROTO.TCP;
     const listener = try posix.socket(addr.any.family, socket_type, protocol);
@@ -13,7 +13,7 @@ pub fn main() !void {
     try posix.bind(listener, &addr.any, addr.getOsSockLen());
     try posix.listen(listener, 128);
     var buf: [128]u8 = undefined;
-    std.debug.print("server starting...", .{});
+    std.debug.print("server starting...\n", .{});
 
     while (true) {
         var client_address: net.Address = undefined;
@@ -26,6 +26,9 @@ pub fn main() !void {
         defer posix.close(socket);
 
         std.debug.print("{} connected\n", .{client_address});
+
+        const timeout = posix.timeval{ .sec = 2, .usec = 500_000 };
+        try posix.setsockopt(socket, posix.SOL.SOCKET, posix.SO.RCVTIMEO, &std.mem.toBytes(timeout));
 
         const read = posix.read(socket, &buf) catch |err| {
             std.debug.print("error reading: {}\n", .{err});
