@@ -17,3 +17,7 @@ Nothing much to say here. You keep scanning through each value of the array unti
 
 ![alt](./diagrams/3-2-crystal-balls.svg)
 
+### Bubble Sort
+
+![alt](./diagrams/4-bubble-sort.svg)
+
