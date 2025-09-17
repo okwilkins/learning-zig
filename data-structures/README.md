@@ -12,3 +12,8 @@ Nothing much to say here. You keep scanning through each value of the array unti
 ### Binary Search
 
 ![alt](./diagrams/2-binary-search.svg)
+
+### Two Crystal Balls Problem
+
+![alt](./diagrams/3-2-crystal-balls.svg)
+
