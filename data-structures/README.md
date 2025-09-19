@@ -21,3 +21,6 @@ Nothing much to say here. You keep scanning through each value of the array unti
 
 ![alt](./diagrams/4-bubble-sort.svg)
 
+### Linked Lists
+
+![alt](./diagrams/5-linked-list.svg)
