@@ -74,5 +74,10 @@ pub fn main() !void {
     var linked_list = LinkedList(?usize).init(allocator);
     defer linked_list.deinit();
 
-    try linked_list.append(null);
+    var i: usize = 0;
+    while (i < 100) : (i += 1) {
+        try linked_list.append(10);
+    }
+
+    std.debug.print("Length: {d}\n", .{linked_list.len()});
 }
