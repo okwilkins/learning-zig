@@ -47,7 +47,19 @@ fn LinkedList(comptime T: type) type {
             self.tail = new_node;
         }
 
-        fn first() *Node {}
+        fn len(self: *Self) usize {
+            if (self.head == null) return 0;
+
+            var count: usize = 0;
+            var current = self.head;
+
+            while (current) |node| {
+                count += 1;
+                current = node.next;
+            }
+
+            return count;
+        }
     };
 }
 
