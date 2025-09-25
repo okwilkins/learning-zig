@@ -47,6 +47,17 @@ fn LinkedList(comptime T: type) type {
             self.tail = new_node;
         }
 
+        fn prepend(self: *Self, value: T) !void {
+            const new_node = try self.allocator.create(Node(T));
+            new_node.* = .{ .value = value };
+
+            if (self.head) |head_node| {
+                head_node.prev = new_node;
+                new_node.next = head_node;
+            }
+            self.head = new_node;
+        }
+
         fn pop(self: *Self) ?T {
             if (self.tail) |tail_node| {
                 defer self.allocator.destroy(tail_node);
@@ -59,6 +70,20 @@ fn LinkedList(comptime T: type) type {
             } else {
                 return null;
             }
+        }
+
+        fn get(self: *Self, index: usize) ?T {
+            var current = self.head;
+            var i: usize = 0;
+
+            while (current) |node| : (i += 1) {
+                if (i == index) {
+                    return node.value;
+                }
+                current = node.next;
+            }
+
+            return null;
         }
 
         fn len(self: *Self) usize {
@@ -90,11 +115,14 @@ pub fn main() !void {
 
     var i: usize = 0;
     while (i < 100) : (i += 1) {
-        try linked_list.append(10);
+        try linked_list.append(i);
     }
 
     if (linked_list.pop()) |value| {
         std.debug.print("Popped value: {d}\n", .{value});
+    }
+    if (linked_list.get(32)) |value| {
+        std.debug.print("Item (32): {d}\n", .{value});
     }
     std.debug.print("Length: {d}\n", .{linked_list.len()});
 }
