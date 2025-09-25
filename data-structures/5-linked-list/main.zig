@@ -47,6 +47,20 @@ fn LinkedList(comptime T: type) type {
             self.tail = new_node;
         }
 
+        fn pop(self: *Self) ?T {
+            if (self.tail) |tail_node| {
+                defer self.allocator.destroy(tail_node);
+                if (tail_node.prev) |prev_node| {
+                    self.tail = prev_node;
+                    prev_node.next = null;
+                }
+                const value = tail_node.value;
+                return value;
+            } else {
+                return null;
+            }
+        }
+
         fn len(self: *Self) usize {
             if (self.head == null) return 0;
 
@@ -71,7 +85,7 @@ pub fn main() !void {
         if (deinit_status == .leak) @panic("Memory leaked!");
     }
 
-    var linked_list = LinkedList(?usize).init(allocator);
+    var linked_list = LinkedList(usize).init(allocator);
     defer linked_list.deinit();
 
     var i: usize = 0;
@@ -79,5 +93,8 @@ pub fn main() !void {
         try linked_list.append(10);
     }
 
+    if (linked_list.pop()) |value| {
+        std.debug.print("Popped value: {d}\n", .{value});
+    }
     std.debug.print("Length: {d}\n", .{linked_list.len()});
 }
