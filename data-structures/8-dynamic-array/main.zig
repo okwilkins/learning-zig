@@ -10,12 +10,14 @@ fn DynamicArray(comptime T: type) type {
         allocator: Allocator,
 
         fn init(allocator: Allocator, size: usize) !Self {
-            const items = try allocator.alloc(T, size);
+            var items = try allocator.alloc(T, size);
+            items.len = 0;
             return Self{ .items = items, .capcacity = size, .allocator = allocator };
         }
 
         fn deinit(self: *Self) void {
-            self.allocator.free(self.items);
+            const full_slice = self.items.ptr[0..self.capcacity];
+            self.allocator.free(full_slice);
         }
 
         fn append(self: *Self, value: T) !void {
@@ -28,8 +30,11 @@ fn DynamicArray(comptime T: type) type {
                 self.capcacity = new_capacity;
             }
 
-            self.items[self.len] = value;
             self.len += 1;
+            self.items.len = self.len;
+
+            self.items[self.len - 1] = value;
+            self.items.len = self.len;
         }
     };
 }
