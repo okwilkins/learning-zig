@@ -5,7 +5,6 @@ fn DynamicArray(comptime T: type) type {
     return struct {
         const Self = @This();
         items: []T,
-        len: usize = 0,
         capcacity: usize,
         allocator: Allocator,
 
@@ -24,17 +23,16 @@ fn DynamicArray(comptime T: type) type {
             var new_capacity = self.capcacity * 2;
             if (new_capacity == 0) new_capacity = 8;
 
-            if (self.len >= self.capcacity) {
+            if (self.items.len >= self.capcacity) {
+                const current_items = self.items.len;
                 self.items = try self.allocator.realloc(self.items, new_capacity);
-                std.debug.print("Allocation occured from {d} to {d}\n", .{ self.capcacity, new_capacity });
+                self.items.len = current_items;
+                std.debug.print("Reallocation occured from {d} bits to {d} bits\n", .{ self.capcacity, new_capacity });
                 self.capcacity = new_capacity;
             }
 
-            self.len += 1;
-            self.items.len = self.len;
-
-            self.items[self.len - 1] = value;
-            self.items.len = self.len;
+            self.items.len += 1;
+            self.items[self.items.len - 1] = value;
         }
     };
 }
@@ -56,11 +54,11 @@ pub fn main() !void {
         try arr.append(i);
     }
 
-    std.debug.print("Length: {d}\n", .{arr.len});
+    std.debug.print("Length: {d}\n", .{arr.items.len});
 
     for (arr.items, 0..) |value, index| {
         std.debug.print("{d}: {d}\n", .{ index, value });
     }
 
-    std.debug.print("Length: {d}\n", .{arr.len});
+    std.debug.print("Length: {d}\n", .{arr.items.len});
 }
