@@ -17,6 +17,7 @@ fn DynamicArray(comptime T: type) type {
         fn deinit(self: *Self) void {
             const full_slice = self.items.ptr[0..self.capcacity];
             self.allocator.free(full_slice);
+            self.* = undefined;
         }
 
         fn append(self: *Self, value: T) !void {
