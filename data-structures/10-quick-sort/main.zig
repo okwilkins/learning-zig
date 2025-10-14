@@ -1,33 +1,30 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-fn quickSort(comptime T: type, items: []T, low: usize, high: usize) void {
-    if (low >= high) return;
+fn quickSort(comptime T: type, items: []T) void {
+    if (items.len <= 1) return;
 
-    const pivotIdx = partition(T, items, low, high);
-    quickSort(T, items, low, pivotIdx - 1);
-    quickSort(T, items, pivotIdx + 1, high);
-}
+    const pivot = items[items.len - 1];
+    std.debug.print("Pivot: {d}\n", .{pivot});
+    var i: usize = 0;
 
-fn partition(comptime T: type, items: []T, low: usize, high: usize) usize {
-    const pivot = items[high];
-    std.debug.print("Pivot selected: {d} | Low: {d} | High: {d}\n", .{ pivot, low, high });
-
-    var idx: usize = 0;
-    if (low > 0) idx = low - 1;
-
-    for (low..high) |i| {
-        std.debug.print("i: {d} | index: {d} | array: {any}\n", .{ i, idx, items });
-        if (items[i] <= pivot) {
-            idx += 1;
-            std.mem.swap(T, &items[i], &items[idx]);
+    for (items[0..items.len], 0..) |item, j| {
+        if (item < pivot) {
+            std.mem.swap(T, &items[i], &items[j]);
+            i += 1;
         }
+        std.debug.print(
+            "i: {d} | j: {d} | Array: {any}\n",
+            .{ i, j, items },
+        );
     }
 
-    idx += 1;
-    items[high] = items[idx];
-    items[idx] = pivot;
-    return idx;
+    std.mem.swap(T, &items[i], &items[items.len - 1]);
+
+    quickSort(T, items[0..i]);
+    if (i + 1 < items.len) {
+        quickSort(T, items[i + 1 ..]);
+    }
 }
 
 pub fn main() !void {
@@ -39,6 +36,6 @@ pub fn main() !void {
     }
 
     std.debug.print("Pre-sorted array: {any}\n", .{items});
-    quickSort(usize, &items, 0, items.len - 1);
+    quickSort(usize, &items);
     std.debug.print("Sorted array: {any}\n", .{items});
 }
