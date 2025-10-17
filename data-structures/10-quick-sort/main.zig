@@ -9,6 +9,20 @@ const QuickSortStrat = enum {
     medianOfThree,
 };
 
+fn CreatePivoter(comptime T: type, strat: QuickSortStrat) Pivoter {
+    switch (strat) {
+        .firstElement => {
+            return FirstElementPivoter(T);
+        },
+        .lastElement => {
+            return LastElementPivoter(T);
+        },
+        _ => {
+            unreachable;
+        },
+    }
+}
+
 fn Pivoter(comptime T: type) type {
     return struct {
         const Self = @This();
@@ -30,10 +44,24 @@ fn FirstElementPivoter(comptime T: type) type {
     return struct {
         const Self = @This();
 
-        fn getPivotIndex(self: *Self, items: []T) usize {
-            _ = self;
+        fn getPivotIndex(items: []T) usize {
             _ = items;
             return 0;
+        }
+
+        fn getPivotIndexOpaque(ptr: *anyopaque, items: []T) usize {
+            const pivoter: *Self = @ptrCast(@alignCast(ptr));
+            return pivoter.getPivotIndex(items);
+        }
+    };
+}
+
+fn LastElementPivoter(comptime T: type) type {
+    return struct {
+        const Self = @This();
+
+        fn getPivotIndex(items: []T) usize {
+            return items.len - 1;
         }
 
         fn getPivotIndexOpaque(ptr: *anyopaque, items: []T) usize {
